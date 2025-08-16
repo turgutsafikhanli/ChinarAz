@@ -1,10 +1,9 @@
-using E_Ticaret.Application.Shared.Helpers;
-using E_Ticaret.Application.Shared.Settings;
-using E_Ticaret.Application.Validations;
-using E_Ticaret.Domain.Entities;
-using E_Ticaret.Persistence.Contexts;
-using E_Ticaret.WebApi.Middlewares;
-using FluentValidation;
+using ChinarAz.Application.Shared.Helpers;
+using ChinarAz.Application.Shared.Settings;
+using ChinarAz.Domain.Entities;
+using ChinarAz.Persistence;
+using ChinarAz.Persistence.Contexts;
+using ChinarAz.WebApi.Middlewares;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -14,13 +13,13 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
+//builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-builder.Services.AddDbContext<E_TicaretDbContext>(options =>
+builder.Services.AddDbContext<ChinarAzDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
 
@@ -33,7 +32,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.User.RequireUniqueEmail = true;
     options.Lockout.MaxFailedAccessAttempts = 3;
 })
-    .AddEntityFrameworkStores<E_TicaretDbContext>()
+    .AddEntityFrameworkStores<ChinarAzDbContext>()
     .AddDefaultTokenProviders();
 
 builder.Services.RegisterService();

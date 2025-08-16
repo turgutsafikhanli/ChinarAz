@@ -7,10 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Abstracts\Services\" />
     <Folder Include="Abstracts\Repositories\" />
-    <Folder Include="DTOs\" />
-    <Folder Include="Shared\" />
     <Folder Include="Validations\" />
   </ItemGroup>
 
@@ -33,6 +30,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChinarAz.Domain\ChinarAz.Domain.csproj" />
   </ItemGroup>
 
 </Project>
