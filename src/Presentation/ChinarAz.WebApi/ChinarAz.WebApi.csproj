@@ -29,8 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Middlewares\" />
+    <ProjectReference Include="..\..\Infrastructure\ChinarAz.Infrastructure\ChinarAz.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\ChinarAz.Persistence\ChinarAz.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,9 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Contexts\" />
     <Folder Include="Configurations\" />
-    <Folder Include="Services\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
 
@@ -32,6 +30,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\ChinarAz.Application\ChinarAz.Application.csproj" />
+    <ProjectReference Include="..\ChinarAz.Infrastructure\ChinarAz.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
