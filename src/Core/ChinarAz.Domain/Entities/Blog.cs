@@ -7,6 +7,6 @@ public class Blog : BaseEntity
     public string ImageUrl { get; set; } = null!;
     public string Author { get; set; } = null!;
 
-    public int CategoryId { get; set; }
+    public Guid CategoryId { get; set; }
     public Category Category { get; set; } = null!;
 }
