@@ -36,15 +36,6 @@ public class UserService : IUserService
     }
     public async Task<BaseResponse<string>> Register(UserRegisterDto dto)
     {
-        if (string.IsNullOrEmpty(dto.Role) || !(dto.Role == "Seller" || dto.Role == "Buyer"))
-        {
-            return new BaseResponse<string>("Role must be either 'Seller' or 'Buyer'", HttpStatusCode.BadRequest);
-        }
-        var roleExists = await _roleManager.RoleExistsAsync(dto.Role);
-        if (!roleExists)
-        {
-            return new BaseResponse<string>($"Role '{dto.Role}' does not exist.", HttpStatusCode.BadRequest);
-        }
         var existedEmail = await _userManager.FindByEmailAsync(dto.Email);
         if (existedEmail is not null)
         {
@@ -54,20 +45,14 @@ public class UserService : IUserService
         {
             Fullname = dto.Fullname,
             Email = dto.Email,
-            UserName = dto.Email
+            UserName = dto.Email,
+            PhoneNumber = dto.PhoneNumber
         };
         var identityResult = await _userManager.CreateAsync(newUser, dto.Password);
         if (!identityResult.Succeeded)
         {
             var errorsMessage = string.Join("; ", identityResult.Errors.Select(e => e.Description));
             return new BaseResponse<string>(errorsMessage, HttpStatusCode.BadRequest);
-        }
-        var roleResult = await _userManager.AddToRoleAsync(newUser, dto.Role);
-        if (!roleResult.Succeeded)
-        {
-            await _userManager.DeleteAsync(newUser);
-            var errors = string.Join("; ", roleResult.Errors.Select(e => e.Description));
-            return new BaseResponse<string>($"Failed to assign role: {errors}", HttpStatusCode.BadRequest);
         }
         var emailConfirmLink = await GetEmailConfirmLink(newUser);
         await _mailService.SendEmailAsync(
@@ -323,6 +308,7 @@ public class UserService : IUserService
                 UserName = email,
                 Email = email,
                 Fullname = name,
+                PhoneNumber = "",
                 EmailConfirmed = true
             };
 

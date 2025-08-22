@@ -1,9 +1,11 @@
 using ChinarAz.Application.Shared.Helpers;
 using ChinarAz.Application.Shared.Settings;
+using ChinarAz.Application.Validations;
 using ChinarAz.Domain.Entities;
 using ChinarAz.Persistence;
 using ChinarAz.Persistence.Contexts;
 using ChinarAz.WebApi.Middlewares;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +15,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-//builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(CategoryCreateDtoValidator).Assembly);
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
@@ -25,7 +27,7 @@ builder.Services.AddDbContext<ChinarAzDbContext>(options =>
 
 
 });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
     options.Password.RequiredLength = 8;
