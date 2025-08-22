@@ -18,7 +18,7 @@ public class BlogConfiguration : IEntityTypeConfiguration<Blog>
 
         builder.Property(b => b.ImageUrl)
                .IsRequired()
-               .HasMaxLength(200);
+               .HasMaxLength(500);
 
         builder.Property(b => b.Content)
                .IsRequired();

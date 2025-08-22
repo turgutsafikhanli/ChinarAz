@@ -1,13 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ChinarAz.Application.Shared;
+﻿namespace ChinarAz.Application.Shared;
 
 public static class Permissions
 {
+    public static class Category
+    {
+        public const string Create = "Category.Create";
+        public const string Update = "Category.Update";
+        public const string Delete = "Category.Delete";
+        public const string Get = "Category.Get";
+
+        public static List<string> All => new List<string>
+        {
+            Create,
+            Update,
+            Delete,
+            Get
+        };
+    }
     public static class Role
     {
         public const string Create = "Role.Create";
