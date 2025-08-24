@@ -17,10 +17,15 @@ public static class ServiceRegistration
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IProductService, ProductService>();
         #endregion
 
         #region Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IOrderProductRepository, OrderProductRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
         #endregion
     }
 }
