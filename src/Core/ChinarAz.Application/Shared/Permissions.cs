@@ -52,4 +52,39 @@ public static class Permissions
             Delete
         };
     }
+    public static class Product
+    {
+        public const string Create = "Product.Create";
+        public const string Update = "Product.Update";
+        public const string Delete = "Product.Delete";
+
+        public static List<string> All => new List<string>
+        {
+            Create,
+            Update,
+            Delete
+        };
+    }
+    public static class Order
+    {
+        public const string Create = "Order.Create";
+        public const string GetAll = "Order.GetAll";
+        public const string Update = "Order.Update";
+        public const string Delete = "Order.Delete";
+        public const string Get = "Order.Get";
+        public const string GetByIdAdmin = "Order.GetByIdAdmin";
+        public const string UpdateAdmin = "Order.UpdateAdmin";
+        public const string DeleteAdmin = "Order.DeleteAdmin";
+        public static List<string> All => new List<string>
+        {
+            Create,
+            GetAll,
+            Update,
+            Delete,
+            Get,
+            GetByIdAdmin,
+            UpdateAdmin,
+            DeleteAdmin
+        };
+    }
 }

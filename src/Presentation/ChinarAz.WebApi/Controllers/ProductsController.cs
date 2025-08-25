@@ -1,5 +1,6 @@
 ﻿using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.ProductDtos;
+using ChinarAz.Application.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +16,7 @@ public class ProductsController : ControllerBase
     public ProductsController(IProductService productService) => _productService = productService;
 
     [HttpPost]
-    [Authorize(Policy = "Product.Create")]
+    [Authorize(Policy = Permissions.Product.Create)]
     public async Task<IActionResult> Create([FromBody] ProductCreateDto dto)
     {
         var result = await _productService.CreateAsync(dto);
@@ -23,7 +24,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = "Product.Update")]
+    [Authorize(Roles = Permissions.Product.Update)]
     public async Task<IActionResult> Update([FromBody] ProductUpdateDto dto)
     {
         var result = await _productService.UpdateAsync(dto);
@@ -31,7 +32,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "Product.Delete")]
+    [Authorize(Policy = Permissions.Product.Delete)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _productService.DeleteAsync(id);

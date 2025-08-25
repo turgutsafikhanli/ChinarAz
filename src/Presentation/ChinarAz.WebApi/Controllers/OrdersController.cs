@@ -25,7 +25,7 @@ public class OrdersController : ControllerBase
     // ========================================
 
     [HttpPost]
-    [Authorize(Roles = "User")]
+    [Authorize(Policy = Permissions.Order.Create)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -36,7 +36,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("my-orders")]
-    [Authorize(Roles = "User")]
+    [Authorize(Policy = Permissions.Order.Get)]
     [ProducesResponseType(typeof(BaseResponse<List<OrderGetDto>>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -47,7 +47,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("my-orders/{id}")]
-    [Authorize(Roles = "User")]
+    [Authorize(Policy = Permissions.Order.Get)]
     [ProducesResponseType(typeof(BaseResponse<OrderGetDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -58,7 +58,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = "User")]
+    [Authorize(Policy = Permissions.Order.Update)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -69,7 +69,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "User")]
+    [Authorize(Roles = "Order.Delete")]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -84,7 +84,7 @@ public class OrdersController : ControllerBase
     // ========================================
 
     [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Order.GetAll)]
     [ProducesResponseType(typeof(BaseResponse<List<OrderGetDto>>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -95,7 +95,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("admin/{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Order.GetByIdAdmin)]
     [ProducesResponseType(typeof(BaseResponse<OrderGetDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -106,7 +106,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut("admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Order.UpdateAdmin")]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -117,7 +117,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpDelete("admin/{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Order.DeleteAdmin)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]

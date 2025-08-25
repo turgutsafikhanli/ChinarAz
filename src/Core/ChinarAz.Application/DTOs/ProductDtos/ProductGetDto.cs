@@ -7,5 +7,4 @@ public record class ProductGetDto
     public Guid CategoryId { get; set; }
     public bool IsWeighted { get; set; }
     public decimal Price { get; set; }
-    public decimal WeightGram { get; set; } = 0;
 }
