@@ -2,9 +2,11 @@
 
 public enum OrderStatus
 {
-    Pending = 0,
-    Processing = 1,
-    Shipped = 2,
-    Completed = 3,
-    Cancelled = 4
+    Pending = 0,     // Sifariş yaradılıb, ödəniş gözlənilir
+    Paid = 1,        // Ödəniş uğurla alınıb
+    Confirmed = 2,   // Admin tərəfindən təsdiqlənib
+    Shipped = 3,     // Göndərilib
+    Delivered = 4,   // İstifadəçiyə çatıb
+    Cancelled = 5,   // Ləğv olunub
+    Failed = 6      // Ödəniş uğursuz olub
 }

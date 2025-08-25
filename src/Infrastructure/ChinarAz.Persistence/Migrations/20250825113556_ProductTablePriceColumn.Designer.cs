@@ -4,6 +4,7 @@ using ChinarAz.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChinarAz.Persistence.Migrations
 {
     [DbContext(typeof(ChinarAzDbContext))]
-    partial class ChinarAzDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250825113556_ProductTablePriceColumn")]
+    partial class ProductTablePriceColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
