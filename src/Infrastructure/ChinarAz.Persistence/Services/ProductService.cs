@@ -10,44 +10,113 @@ namespace ChinarAz.Persistence.Services;
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
+    private readonly IFileUploadService _fileUploadService;
 
-    public ProductService(IProductRepository productRepository)
+    public ProductService(IProductRepository productRepository, IFileUploadService fileUploadService)
     {
         _productRepository = productRepository;
+        _fileUploadService = fileUploadService;
     }
 
     // Admin
     public async Task<BaseResponse<string>> CreateAsync(ProductCreateDto dto)
     {
-        var product = new Product
+        try
         {
-            Name = dto.Name,
-            CategoryId = dto.CategoryId,
-            IsWeighted = dto.IsWeighted,
-            Price = dto.Price
-        };
+            var uploadedImageUrls = new List<string>();
 
-        await _productRepository.AddAsync(product);
-        await _productRepository.SaveChangeAsync();
+            if (dto.Images != null && dto.Images.Any())
+            {
+                foreach (var imageFile in dto.Images)
+                {
+                    var url = await _fileUploadService.UploadAsync(imageFile);
+                    uploadedImageUrls.Add(url);
+                }
+            }
 
-        return new BaseResponse<string>("Product created successfully", HttpStatusCode.Created);
+            var product = new Product
+            {
+                Name = dto.Name,
+                CategoryId = dto.CategoryId,
+                IsWeighted = dto.IsWeighted,
+                Price = dto.Price,
+                Images = uploadedImageUrls.Select(url => new Image { ImageUrl = url }).ToList()
+            };
+
+            await _productRepository.AddAsync(product);
+            await _productRepository.SaveChangeAsync();
+
+            return new BaseResponse<string>(HttpStatusCode.Created)
+            {
+                Data = product.Id.ToString(),
+                Message = "Product created successfully"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new BaseResponse<string>(HttpStatusCode.InternalServerError)
+            {
+                Success = false,
+                Message = $"Error creating product: {ex.Message}"
+            };
+        }
     }
 
     public async Task<BaseResponse<string>> UpdateAsync(ProductUpdateDto dto)
     {
-        var product = await _productRepository.GetByIdAsync(dto.Id);
-        if (product == null)
-            return new BaseResponse<string>("Product not found", HttpStatusCode.NotFound);
+        try
+        {
+            var product = await _productRepository.GetByIdAsync(dto.Id);
+            if (product == null)
+            {
+                return new BaseResponse<string>(HttpStatusCode.NotFound)
+                {
+                    Success = false,
+                    Message = "Product not found"
+                };
+            }
 
-        product.Name = dto.Name;
-        product.CategoryId = dto.CategoryId;
-        product.IsWeighted = dto.IsWeighted;
-        product.Price = dto.Price;
+            // Yeni şəkillər əlavə olunubsa
+            if (dto.Images != null && dto.Images.Any())
+            {
+                var uploadedImageUrls = new List<string>();
+                foreach (var imageFile in dto.Images)
+                {
+                    var url = await _fileUploadService.UploadAsync(imageFile);
+                    uploadedImageUrls.Add(url);
+                }
 
-        _productRepository.Update(product);
-        await _productRepository.SaveChangeAsync();
+                // Köhnə şəkilləri yalnız yeni şəkillər varsa silirik
+                product.Images.Clear();
+                product.Images = uploadedImageUrls.Select(url => new Image
+                {
+                    ImageUrl = url
+                }).ToList();
+            }
 
-        return new BaseResponse<string>("Product updated successfully", HttpStatusCode.OK);
+            // Digər field-ləri update et
+            product.Name = dto.Name;
+            product.CategoryId = dto.CategoryId;
+            product.IsWeighted = dto.IsWeighted;
+            product.Price = dto.Price;
+
+            _productRepository.Update(product);
+            await _productRepository.SaveChangeAsync();
+
+            return new BaseResponse<string>(HttpStatusCode.OK)
+            {
+                Data = product.Id.ToString(),
+                Message = "Product updated successfully"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new BaseResponse<string>(HttpStatusCode.InternalServerError)
+            {
+                Success = false,
+                Message = $"Error updating product: {ex.Message}"
+            };
+        }
     }
 
     public async Task<BaseResponse<string>> DeleteAsync(Guid id)

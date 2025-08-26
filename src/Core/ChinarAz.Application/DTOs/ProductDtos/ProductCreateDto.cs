@@ -1,4 +1,6 @@
-﻿namespace ChinarAz.Application.DTOs.ProductDtos;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace ChinarAz.Application.DTOs.ProductDtos;
 
 public record class ProductCreateDto
 {
@@ -6,4 +8,6 @@ public record class ProductCreateDto
     public Guid CategoryId { get; set; } // Product yaradılarkən category id saxlanır
     public bool IsWeighted { get; set; }
     public decimal Price { get; set; }
+    public List<IFormFile>? Images { get; set; } = new();
+    public List<string>? ImageUrls { get; set; } = new();
 }
