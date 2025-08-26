@@ -9,4 +9,6 @@ public class Blog : BaseEntity
 
     public Guid CategoryId { get; set; }
     public Category Category { get; set; } = null!;
+
+    public ICollection<Image> Images { get; set; } = new List<Image>();
 }

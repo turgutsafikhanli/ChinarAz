@@ -21,6 +21,11 @@ public class ImageConfiguration : IEntityTypeConfiguration<Image>
                .WithMany(p => p.Images)
                .HasForeignKey(i => i.ProductId)
                .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(i => i.Blog)
+            .WithMany(b => b.Images)
+            .HasForeignKey(i => i.BlogId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

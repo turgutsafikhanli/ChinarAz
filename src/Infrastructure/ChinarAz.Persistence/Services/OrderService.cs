@@ -1,15 +1,12 @@
-﻿using AutoMapper;
-using ChinarAz.Application.Abstracts.Repositories;
+﻿using ChinarAz.Application.Abstracts.Repositories;
 using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.OrderDtos;
 using ChinarAz.Application.DTOs.OrderProductDtos;
 using ChinarAz.Application.Shared;
 using ChinarAz.Domain.Entities;
 using ChinarAz.Domain.Enums;
-using ChinarAz.Persistence.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 using System.Net;
 using System.Security.Claims;
 
