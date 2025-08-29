@@ -22,6 +22,8 @@ public static class ServiceRegistration
         services.AddScoped<IBioService, BioService>();
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<IFavouriteService, FavouriteService>();
+        services.AddScoped<ICacheService, CacheService>();
+        services.AddScoped<IElasticService, ElasticService>();
         #endregion
 
         #region Repositories

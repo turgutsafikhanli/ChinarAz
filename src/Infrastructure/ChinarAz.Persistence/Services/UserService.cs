@@ -125,7 +125,7 @@ public class UserService : IUserService
     private async Task<string> GetEmailConfirmLink(AppUser user)
     {
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var link = $"https://localhost:7041/api/Accounts/confirm-email?userId={user.Id}&token={HttpUtility.UrlEncode(token)}";
+        var link = $"https://localhost:7112/api/Accounts/confirm-email?userId={user.Id}&token={HttpUtility.UrlEncode(token)}";
         Console.WriteLine(token);
         return link;
 
@@ -269,7 +269,7 @@ public class UserService : IUserService
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         var encodedToken = WebUtility.UrlEncode(token);
 
-        var resetLink = $"https://localhost:7041/api/Accounts/reset-password?email={email}&token={encodedToken}";
+        var resetLink = $"https://localhost:7112/api/Accounts/reset-password?email={email}&token={encodedToken}";
 
         await _mailService.SendEmailAsync(
             new List<string> { email },

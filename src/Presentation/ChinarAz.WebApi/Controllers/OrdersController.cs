@@ -25,7 +25,7 @@ public class OrdersController : ControllerBase
     // ========================================
 
     [HttpPost]
-    [Authorize(Policy = Permissions.Order.Create)]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -36,7 +36,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("my-orders")]
-    [Authorize(Policy = Permissions.Order.Get)]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<List<OrderGetDto>>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -47,7 +47,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("my-orders/{id}")]
-    [Authorize(Policy = Permissions.Order.Get)]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<OrderGetDto>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -58,7 +58,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = Permissions.Order.Update)]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -69,7 +69,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Order.Delete")]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]

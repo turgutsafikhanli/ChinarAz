@@ -5,6 +5,7 @@ using ChinarAz.Application.DTOs.OrderProductDtos;
 using ChinarAz.Application.Shared;
 using ChinarAz.Domain.Entities;
 using ChinarAz.Domain.Enums;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -49,7 +50,7 @@ public class OrderService : IOrderService
     {
         try
         {
-            var userId = GetUserIdFromToken(); // JWT tokendən oxunur
+            var userId = GetUserIdFromToken();
 
             if (dto.Products == null || !dto.Products.Any())
                 return new BaseResponse<string>("No products in the order", HttpStatusCode.BadRequest);
@@ -69,13 +70,25 @@ public class OrderService : IOrderService
 
                 if (product.IsWeighted)
                 {
-                    if (p.WeightGram <= 0)
-                        return new BaseResponse<string>($"Product {product.Name} requires WeightGram > 0", HttpStatusCode.BadRequest);
+                    if (p.WeightGram <= 0 || p.WeightGram > 2)
+                        return new BaseResponse<string>(
+                            $"Product {product.Name} requires WeightKg > 0 and <= 2",
+                            HttpStatusCode.BadRequest);
+
+                    if (p.Quantity > 0)
+                        return new BaseResponse<string>(
+                            $"Product {product.Name} is weighted. Do not enter Quantity.",
+                            HttpStatusCode.BadRequest);
                 }
                 else
                 {
                     if (p.Quantity <= 0)
                         return new BaseResponse<string>($"Product {product.Name} requires Quantity > 0", HttpStatusCode.BadRequest);
+
+                    if (p.WeightGram > 0)
+                        return new BaseResponse<string>(
+                            $"Product {product.Name} is not weighted. Do not enter WeightKg.",
+                            HttpStatusCode.BadRequest);
                 }
 
                 var orderProduct = new OrderProduct
@@ -98,6 +111,7 @@ public class OrderService : IOrderService
 
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangeAsync();
+
 
             return new BaseResponse<string>("Order created successfully", HttpStatusCode.Created);
         }
@@ -229,5 +243,24 @@ public class OrderService : IOrderService
                 WeightGram = op.WeightGram
             }).ToList()
         };
+    }
+
+    public async Task UpdatePendingOrdersAsync()
+    {
+        var threshold = DateTime.UtcNow.AddMinutes(-15);
+        var pendingOrders = await _orderRepository.GetAll()
+            .Where(o => o.Status == OrderStatus.Pending && o.CreatedAt <= threshold)
+            .ToListAsync();
+
+        if (!pendingOrders.Any())
+            return;
+
+        foreach (var order in pendingOrders)
+        {
+            order.Status = OrderStatus.Cancelled;
+            _orderRepository.Update(order);
+        }
+
+        await _orderRepository.SaveChangeAsync();
     }
 }
