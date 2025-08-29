@@ -21,4 +21,5 @@ public interface IOrderService
     Task<BaseResponse<OrderGetDto>> GetByIdAdminAsync(Guid orderId);         // İstənilən sifarişi görmək
     Task<BaseResponse<string>> UpdateAdminAsync(OrderUpdateDto dto);         // İstənilən sifarişi yeniləmək
     Task<BaseResponse<string>> DeleteAdminAsync(Guid orderId);               // İstənilən sifarişi silmək
+    Task UpdatePendingOrdersAsync();
 }

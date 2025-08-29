@@ -1,8 +1,10 @@
 ﻿using ChinarAz.Application.Abstracts.Repositories;
 using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.ProductDtos;
+using ChinarAz.Application.Models;
 using ChinarAz.Application.Shared;
 using ChinarAz.Domain.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Net;
 
 namespace ChinarAz.Persistence.Services;
@@ -11,26 +13,38 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IFileUploadService _fileUploadService;
+    private readonly ICacheService _cacheService;
+    private readonly IElasticService _elasticService;
 
-    public ProductService(IProductRepository productRepository, IFileUploadService fileUploadService)
+    private readonly TimeSpan _cacheExpiryShort = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _cacheExpiryLong = TimeSpan.FromMinutes(10);
+
+    public ProductService(
+        IProductRepository productRepository,
+        IFileUploadService fileUploadService,
+        ICacheService cacheService,
+        IElasticService elasticService)
     {
         _productRepository = productRepository;
         _fileUploadService = fileUploadService;
+        _cacheService = cacheService;
+        _elasticService = elasticService;
     }
 
-    // Admin
+    // =======================
+    // Admin CRUD
+    // =======================
     public async Task<BaseResponse<string>> CreateAsync(ProductCreateDto dto)
     {
         try
         {
-            var uploadedImageUrls = new List<string>();
-
+            var uploadedImages = new List<string>();
             if (dto.Images != null && dto.Images.Any())
             {
-                foreach (var imageFile in dto.Images)
+                foreach (var file in dto.Images)
                 {
-                    var url = await _fileUploadService.UploadAsync(imageFile);
-                    uploadedImageUrls.Add(url);
+                    var url = await _fileUploadService.UploadAsync(file);
+                    uploadedImages.Add(url);
                 }
             }
 
@@ -40,25 +54,29 @@ public class ProductService : IProductService
                 CategoryId = dto.CategoryId,
                 IsWeighted = dto.IsWeighted,
                 Price = dto.Price,
-                Images = uploadedImageUrls.Select(url => new Image { ImageUrl = url }).ToList()
+                Images = uploadedImages.Select(u => new Image { ImageUrl = u }).ToList()
             };
 
             await _productRepository.AddAsync(product);
             await _productRepository.SaveChangeAsync();
 
-            return new BaseResponse<string>(HttpStatusCode.Created)
+            var elasticModel = new ProductElasticModel
             {
-                Data = product.Id.ToString(),
-                Message = "Product created successfully"
+                Id = product.Id,
+                Name = product.Name,
+                CategoryId = product.CategoryId,
+                Price = product.Price,
+                IsWeighted = product.IsWeighted
             };
+            await _elasticService.IndexProductAsync(elasticModel);
+
+            await _cacheService.RemoveAsync($"products_category_{dto.CategoryId}");
+
+            return new BaseResponse<string>("Product created successfully", product.Id.ToString(), HttpStatusCode.Created);
         }
         catch (Exception ex)
         {
-            return new BaseResponse<string>(HttpStatusCode.InternalServerError)
-            {
-                Success = false,
-                Message = $"Error creating product: {ex.Message}"
-            };
+            return new BaseResponse<string>($"Error creating product: {ex.Message}", false, HttpStatusCode.InternalServerError);
         }
     }
 
@@ -68,33 +86,18 @@ public class ProductService : IProductService
         {
             var product = await _productRepository.GetByIdAsync(dto.Id);
             if (product == null)
-            {
-                return new BaseResponse<string>(HttpStatusCode.NotFound)
-                {
-                    Success = false,
-                    Message = "Product not found"
-                };
-            }
+                return new BaseResponse<string>("Product not found", false, HttpStatusCode.NotFound);
 
-            // Yeni şəkillər əlavə olunubsa
             if (dto.Images != null && dto.Images.Any())
             {
-                var uploadedImageUrls = new List<string>();
-                foreach (var imageFile in dto.Images)
-                {
-                    var url = await _fileUploadService.UploadAsync(imageFile);
-                    uploadedImageUrls.Add(url);
-                }
+                var uploadedImages = new List<string>();
+                foreach (var file in dto.Images)
+                    uploadedImages.Add(await _fileUploadService.UploadAsync(file));
 
-                // Köhnə şəkilləri yalnız yeni şəkillər varsa silirik
                 product.Images.Clear();
-                product.Images = uploadedImageUrls.Select(url => new Image
-                {
-                    ImageUrl = url
-                }).ToList();
+                product.Images = uploadedImages.Select(u => new Image { ImageUrl = u }).ToList();
             }
 
-            // Digər field-ləri update et
             product.Name = dto.Name;
             product.CategoryId = dto.CategoryId;
             product.IsWeighted = dto.IsWeighted;
@@ -103,19 +106,25 @@ public class ProductService : IProductService
             _productRepository.Update(product);
             await _productRepository.SaveChangeAsync();
 
-            return new BaseResponse<string>(HttpStatusCode.OK)
+            var elasticModel = new ProductElasticModel
             {
-                Data = product.Id.ToString(),
-                Message = "Product updated successfully"
+                Id = product.Id,
+                Name = product.Name,
+                CategoryId = product.CategoryId,
+                Price = product.Price,
+                IsWeighted = product.IsWeighted
             };
+            await _elasticService.UpdateProductAsync(elasticModel);
+
+            await _cacheService.RemoveAsync($"product_{product.Id}");
+            await _cacheService.RemoveAsync($"products_category_{product.CategoryId}");
+            await _cacheService.RemoveAsync($"search_*");
+
+            return new BaseResponse<string>("Product updated successfully", product.Id.ToString(), HttpStatusCode.OK);
         }
         catch (Exception ex)
         {
-            return new BaseResponse<string>(HttpStatusCode.InternalServerError)
-            {
-                Success = false,
-                Message = $"Error updating product: {ex.Message}"
-            };
+            return new BaseResponse<string>($"Error updating product: {ex.Message}", false, HttpStatusCode.InternalServerError);
         }
     }
 
@@ -123,60 +132,115 @@ public class ProductService : IProductService
     {
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            return new BaseResponse<string>("Product not found", HttpStatusCode.NotFound);
+            return new BaseResponse<string>("Product not found", false, HttpStatusCode.NotFound);
 
         _productRepository.Delete(product);
         await _productRepository.SaveChangeAsync();
 
+        // Elasticsearch delete
+        await _elasticService.DeleteProductAsync(id);
+
+        // Cache invalidation
+        await _cacheService.RemoveAsync($"product_{id}");
+        await _cacheService.RemoveAsync($"products_category_{product.CategoryId}");
+        await _cacheService.RemoveAsync($"search_*");
+
         return new BaseResponse<string>("Product deleted successfully", HttpStatusCode.OK);
     }
 
-    // Müştəri
+    // =======================
+    // Müştəri metodları
+    // =======================
     public async Task<BaseResponse<ProductGetDto>> GetByIdAsync(Guid id)
     {
+        var cacheKey = $"product_{id}";
+        var cached = await _cacheService.GetAsync<ProductGetDto>(cacheKey);
+        if (cached != null)
+            return new BaseResponse<ProductGetDto>("Product retrieved (from cache)", cached, HttpStatusCode.OK);
+
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            return new BaseResponse<ProductGetDto>("Product not found", HttpStatusCode.NotFound);
+            return new BaseResponse<ProductGetDto>("Product not found", false, HttpStatusCode.NotFound);
 
-        var dto = new ProductGetDto
-        {
-            Id = product.Id,
-            Name = product.Name,
-            CategoryId = product.CategoryId,
-            IsWeighted = product.IsWeighted,
-            Price = product.Price
-        };
+        var dto = MapToDto(product);
+        await _cacheService.SetAsync(cacheKey, dto, _cacheExpiryShort);
 
         return new BaseResponse<ProductGetDto>("Product retrieved", dto, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<List<ProductGetDto>>> GetByCategoryIdAsync(Guid categoryId)
     {
-        var products = await _productRepository.GetByCategoryIdAsync(categoryId);
-        var dtoList = products.Select(p => new ProductGetDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            CategoryId = p.CategoryId,
-            IsWeighted = p.IsWeighted,
-            Price = p.Price
-        }).ToList();
+        var cacheKey = $"products_category_{categoryId}";
+        var cached = await _cacheService.GetAsync<List<ProductGetDto>>(cacheKey);
+        if (cached != null)
+            return new BaseResponse<List<ProductGetDto>>("Products retrieved (from cache)", cached, HttpStatusCode.OK);
 
-        return new BaseResponse<List<ProductGetDto>>("Products retrieved", dtoList, HttpStatusCode.OK);
+        var products = await _productRepository.GetByCategoryIdAsync(categoryId);
+        var dtos = products.Select(MapToDto).ToList();
+
+        await _cacheService.SetAsync(cacheKey, dtos, _cacheExpiryLong);
+        return new BaseResponse<List<ProductGetDto>>("Products retrieved", dtos, HttpStatusCode.OK);
     }
 
     public async Task<BaseResponse<List<ProductGetDto>>> SearchAsync(string keyword)
     {
-        var products = await _productRepository.SearchAsync(keyword);
-        var dtoList = products.Select(p => new ProductGetDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            CategoryId = p.CategoryId,
-            IsWeighted = p.IsWeighted,
-            Price = p.Price
-        }).ToList();
+        if (string.IsNullOrWhiteSpace(keyword))
+            return new BaseResponse<List<ProductGetDto>>(
+                "Keyword is empty",
+                new List<ProductGetDto>(),
+                HttpStatusCode.BadRequest
+            );
 
-        return new BaseResponse<List<ProductGetDto>>("Products retrieved", dtoList, HttpStatusCode.OK);
+        var cacheKey = $"search_{keyword.ToLower()}";
+
+        var cached = await _cacheService.GetAsync<List<ProductGetDto>>(cacheKey);
+        if (cached != null && cached.Any())
+        {
+            return new BaseResponse<List<ProductGetDto>>(
+                "Products retrieved (from cache)",
+                cached,
+                HttpStatusCode.OK
+            );
+        }
+
+        var productsFromElastic = await _elasticService.SearchProductsAsync(keyword);
+
+        if (productsFromElastic == null || !productsFromElastic.Any())
+        {
+            // Əgər nəticə tapılmadısa cache-ə yazmırıq
+            return new BaseResponse<List<ProductGetDto>>(
+                "No products found for your search.",
+                new List<ProductGetDto>(),
+                HttpStatusCode.OK
+            );
+        }
+
+        var dtos = productsFromElastic
+            .Where(p => p != null)
+            .Select(p => new ProductGetDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                CategoryId = p.CategoryId,
+                IsWeighted = p.IsWeighted,
+                Price = p.Price
+            })
+            .ToList();
+
+        await _cacheService.SetAsync(cacheKey, dtos, TimeSpan.FromDays(1));
+
+        return new BaseResponse<List<ProductGetDto>>(
+            "Products retrieved",
+            dtos,
+            HttpStatusCode.OK
+        );
     }
+    private ProductGetDto MapToDto(Product product) => new()
+    {
+        Id = product.Id,
+        Name = product.Name,
+        CategoryId = product.CategoryId,
+        IsWeighted = product.IsWeighted,
+        Price = product.Price
+    };
 }

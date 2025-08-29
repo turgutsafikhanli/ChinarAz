@@ -1,12 +1,17 @@
+using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.Shared.Helpers;
 using ChinarAz.Application.Shared.Settings;
 using ChinarAz.Application.Validations;
 using ChinarAz.Domain.Entities;
 using ChinarAz.Persistence;
 using ChinarAz.Persistence.Contexts;
+using ChinarAz.Persistence.Service;
 using ChinarAz.WebApi.Middlewares;
+using Elastic.Clients.Elasticsearch;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +25,14 @@ builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+    options.InstanceName = "ChinarAz";
+});
+
+builder.Services.AddSingleton(new ElasticsearchClient(new ElasticsearchClientSettings(new Uri(builder.Configuration["ElasticsearchSettings:Uri"]))));
 
 builder.Services.AddDbContext<ChinarAzDbContext>(options =>
 {
@@ -81,6 +94,22 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddHangfire(config =>
+{
+    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+          .UseSimpleAssemblyNameTypeSerializer()
+          .UseRecommendedSerializerSettings()
+          .UseSqlServerStorage(builder.Configuration.GetConnectionString("Default"), new SqlServerStorageOptions
+          {
+              CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+              SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+              QueuePollInterval = TimeSpan.Zero,
+              UseRecommendedIsolationLevel = true,
+              DisableGlobalLocks = true
+          });
+});
+builder.Services.AddHangfireServer();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -112,6 +141,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -121,11 +151,28 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    var orderService = scope.ServiceProvider.GetRequiredService<IOrderService>();
+
+    recurringJobManager.AddOrUpdate(
+        "update-order-status",
+        () => orderService.UpdatePendingOrdersAsync(),
+        Cron.Minutely
+    );
+}
+
 app.UseStaticFiles();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthentication();
+
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
 
 app.UseAuthorization();
 
