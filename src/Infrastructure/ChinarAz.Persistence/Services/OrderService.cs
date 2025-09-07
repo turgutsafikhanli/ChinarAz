@@ -2,10 +2,13 @@
 using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.OrderDtos;
 using ChinarAz.Application.DTOs.OrderProductDtos;
+using ChinarAz.Application.Events;
 using ChinarAz.Application.Shared;
 using ChinarAz.Domain.Entities;
 using ChinarAz.Domain.Enums;
+using Elastic.Clients.Elasticsearch.Security;
 using Hangfire;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
@@ -19,17 +22,20 @@ public class OrderService : IOrderService
     private readonly IProductRepository _productRepository;
     private readonly IOrderProductRepository _orderProductRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOrderProductRepository orderProductRepository,
         IHttpContextAccessor httpContextAccessor,
-        IProductRepository productRepository)
+        IProductRepository productRepository,
+        IPublishEndpoint publishEndpoint)
     {
         _orderRepository = orderRepository;
         _orderProductRepository = orderProductRepository;
         _httpContextAccessor = httpContextAccessor;
         _productRepository = productRepository;
+        _publishEndpoint = publishEndpoint;
     }
 
     // =======================
@@ -51,6 +57,7 @@ public class OrderService : IOrderService
         try
         {
             var userId = GetUserIdFromToken();
+            var userEmail = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
             if (dto.Products == null || !dto.Products.Any())
                 return new BaseResponse<string>("No products in the order", HttpStatusCode.BadRequest);
@@ -111,6 +118,10 @@ public class OrderService : IOrderService
 
             await _orderRepository.AddAsync(order);
             await _orderRepository.SaveChangeAsync();
+
+            await _publishEndpoint.Publish(
+                new OrderCreatedEvent(order.Id, userEmail, order.TotalPrice, userId)
+            );
 
 
             return new BaseResponse<string>("Order created successfully", HttpStatusCode.Created);
