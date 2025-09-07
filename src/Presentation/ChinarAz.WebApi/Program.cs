@@ -3,6 +3,7 @@ using ChinarAz.Application.Shared.Helpers;
 using ChinarAz.Application.Shared.Settings;
 using ChinarAz.Application.Validations;
 using ChinarAz.Domain.Entities;
+using ChinarAz.Infrastructure.Consumers;
 using ChinarAz.Persistence;
 using ChinarAz.Persistence.Contexts;
 using ChinarAz.Persistence.Service;
@@ -12,10 +13,12 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Hangfire;
 using Hangfire.SqlServer;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -93,6 +96,25 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderCreatedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("order-created-email", e =>
+        {
+            e.ConfigureConsumer<OrderCreatedConsumer>(context);
+        });
+    });
+});
 
 builder.Services.AddHangfire(config =>
 {
