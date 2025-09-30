@@ -87,4 +87,30 @@ public static class Permissions
             DeleteAdmin
         };
     }
+    public static class Blog
+    {
+        public const string Create = "Blog.Create";
+        public const string Update = "Blog.Update";
+        public const string Delete = "Blog.Delete";
+        public const string Get = "Blog.Get";
+        public static List<string> All => new List<string>
+        {
+            Create,
+            Update,
+            Delete,
+            Get
+        };
+    }
+    public static class Bio
+    {
+        public const string Create = "Bio.Create";
+        public const string Update = "Bio.Update";
+        public const string Delete = "Bio.Delete";
+        public const string Get = "Bio.Get";
+        public static List<string> All => new List<string>
+        {
+            Update,
+            Get
+        };
+    }
 }

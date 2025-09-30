@@ -106,7 +106,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPut("admin")]
-    [Authorize(Roles = "Order.UpdateAdmin")]
+    [Authorize(Policy = Permissions.Order.UpdateAdmin)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
