@@ -1,5 +1,7 @@
 ﻿using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.BioDtos;
+using ChinarAz.Application.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -18,6 +20,7 @@ public class BiosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = Permissions.Bio.Create)]
     public async Task<IActionResult> Create([FromBody] BioCreateDto dto)
     {
         var result = await _bioService.CreateAsync(dto);
@@ -25,6 +28,7 @@ public class BiosController : ControllerBase
     }
 
     [HttpPut]
+    [Authorize(Policy = Permissions.Bio.Update)]
     public async Task<IActionResult> Update([FromBody] BioUpdateDto dto)
     {
         var result = await _bioService.UpdateAsync(dto);
@@ -32,6 +36,7 @@ public class BiosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = Permissions.Bio.Delete)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _bioService.DeleteAsync(id);
@@ -39,6 +44,7 @@ public class BiosController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Policy = Permissions.Bio.Get)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _bioService.GetByIdAsync(id);

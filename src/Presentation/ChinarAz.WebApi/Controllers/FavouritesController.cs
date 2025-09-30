@@ -1,6 +1,7 @@
 ﻿using ChinarAz.Application.Abstracts.Services;
 using ChinarAz.Application.DTOs.FavouriteDtos;
 using ChinarAz.Application.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -21,6 +22,7 @@ public class FavouritesController : ControllerBase
 
     // Yeni favourite əlavə et
     [HttpPost("add")]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.BadRequest)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -32,6 +34,7 @@ public class FavouritesController : ControllerBase
 
     // Favourite sil
     [HttpDelete("remove/{productId:guid}")]
+    [Authorize]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.NotFound)]
     [ProducesResponseType(typeof(BaseResponse<string>), (int)HttpStatusCode.InternalServerError)]
@@ -43,6 +46,7 @@ public class FavouritesController : ControllerBase
 
     // İstifadəçinin favourites-lərini gətir
     [HttpGet("user")]
+    [Authorize]
     public async Task<IActionResult> GetUserFavourites()
     {
         var result = await _favouriteService.GetUserFavouritesAsync();
